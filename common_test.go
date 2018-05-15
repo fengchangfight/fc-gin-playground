@@ -22,11 +22,12 @@ func TestMain(m *testing.M) {
 
 // Helper function to create a router during testing
 func getRouter(withTemplates bool) *gin.Engine {
-  r := gin.Default()
-  if withTemplates {
-    r.LoadHTMLGlob("templates/*")
-  }
-  return r
+    r := gin.Default()
+    if withTemplates {
+        r.LoadHTMLGlob("templates/*")
+        r.Use(setUserStatus()) // new line
+    }
+    return r
 }
 
 // Helper function to process a request and test its response
@@ -52,4 +53,24 @@ func saveLists() {
 // This function is used to restore the main lists from the temporary one
 func restoreLists() {
   articleList = tmpArticleList
+}
+
+var tmpUserList []user
+
+func saveLists() {
+    tmpUserList = userList
+    tmpArticleList = articleList
+}
+
+func restoreLists() {
+    userList = tmpUserList
+    articleList = tmpArticleList
+}
+
+func testMiddlewareRequest(t *testing.T, r *gin.Engine, expectedHTTPCode int) {
+    req, _ := http.NewRequest("GET", "/", nil)
+
+    testHTTPResponse(t, r, req, func(w *httptest.ResponseRecorder) bool {
+        return w.Code == expectedHTTPCode
+    })
 }
